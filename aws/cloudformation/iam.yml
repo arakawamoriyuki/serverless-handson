@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: serverless handson developer iam resources
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: test
+
+Resources:
+  IAMUserDeveloper:
+    Type: AWS::IAM::User
+    Properties:
+      ManagedPolicyArns:
+        - !Ref SamPolicy
+      UserName: !Join ['-', ['serverless-handson-developer', !Ref ProjectName]]
+
+  # https://docs.aws.amazon.com/ja_jp/serverless-application-model/latest/developerguide/sam-permissions.html
+  SamPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Sid: CloudFormationTemplate
+            Effect: Allow
+            Action:
+              - cloudformation:CreateChangeSet
+            Resource:
+              - arn:aws:cloudformation:*:aws:transform/Serverless-2016-10-31
+          -
+            Sid: CloudFormationStack
+            Effect: Allow
+            Action:
+              - cloudformation:CreateChangeSet
+              - cloudformation:CreateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeChangeSet
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStacks
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:GetTemplateSummary
+              - cloudformation:ListStackResources
+              - cloudformation:UpdateStack
+            Resource:
+              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/*'
+          -
+            Sid: S3
+            Effect: Allow
+            Action:
+              - s3:CreateBucket
+              - s3:GetObject
+              - s3:PutObject
+            Resource:
+              - arn:aws:s3:::*/*
+          -
+            Sid: ECRRepository
+            Effect: Allow
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:BatchGetImage
+              - ecr:CompleteLayerUpload
+              - ecr:CreateRepository
+              - ecr:DeleteRepository
+              - ecr:DescribeImages
+              - ecr:DescribeRepositories
+              - ecr:GetDownloadUrlForLayer
+              - ecr:GetRepositoryPolicy
+              - ecr:InitiateLayerUpload
+              - ecr:ListImages
+              - ecr:PutImage
+              - ecr:SetRepositoryPolicy
+              - ecr:UploadLayerPart
+            Resource:
+              - !Sub 'arn:aws:ecr:*:${AWS::AccountId}:repository/*'
+          -
+            Sid: ECRAuthToken
+            Effect: Allow
+            Action:
+              - ecr:GetAuthorizationToken
+            Resource:
+              - '*'
+          -
+            Sid: Lambda
+            Effect: Allow
+            Action:
+              - lambda:AddPermission
+              - lambda:CreateFunction
+              - lambda:DeleteFunction
+              - lambda:GetFunction
+              - lambda:GetFunctionConfiguration
+              - lambda:ListTags
+              - lambda:RemovePermission
+              - lambda:TagResource
+              - lambda:UntagResource
+              - lambda:UpdateFunctionCode
+              - lambda:UpdateFunctionConfiguration
+              - lambda:ListVersionsByFunction
+              - lambda:PublishVersion
+              - lambda:ListAliases
+              - lambda:GetAlias
+              - lambda:CreateAlias
+              - lambda:UpdateAlias
+              - lambda:DeleteAlias
+              - lambda:ListProvisionedConcurrencyConfigs
+              - lambda:GetProvisionedConcurrencyConfig
+              - lambda:PutProvisionedConcurrencyConfig
+              - lambda:DeleteProvisionedConcurrencyConfig
+            Resource:
+              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:*'
+          -
+            Sid: IAM
+            Effect: Allow
+            Action:
+              - iam:AttachRolePolicy
+              - iam:DeleteRole
+              - iam:DetachRolePolicy
+              - iam:GetRole
+              - iam:TagRole
+              - iam:CreateRole
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
+          -
+            Sid: SecurityGroup
+            Effect: Allow
+            Action:
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSubnets
+              - ec2:DescribeVpcs
+              - ec2:CreateSecurityGroup
+              - ec2:createTags
+              - ec2:AuthorizeSecurityGroupIngress
+              - ec2:DeleteSecurityGroup
+            Resource:
+              - '*'
+          -
+            Sid: IAMPassRole
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource:
+              - '*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: lambda.amazonaws.com
+          -
+            Sid: APIGateway
+            Effect: Allow
+            Action:
+              - apigateway:GET
+              - apigateway:POST
+              - apigateway:PATCH
+              - apigateway:PUT
+              - apigateway:DELETE
+              - apigateway:TagResource
+            Resource:
+              - arn:aws:apigateway:*::*
+
+Outputs:
+  PasswordSettingURL:
+    Description: Please create a password at the URL
+    Value: !Join ['', ['https://', 'console.aws.amazon.com/iam/home?region=', !Ref AWS::Region, '#/users/', !Ref IAMUserDeveloper, '?section=security_credentials']]
