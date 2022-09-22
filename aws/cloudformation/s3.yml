@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: s3 resources
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: test
+
+Resources:
+  S3BucketFrontend:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Join ['-', ['serverless-handson', !Ref ProjectName]]
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      LifecycleConfiguration:
+        Rules:
+        - Id: LifeCycleRule
+          Status: Enabled
+          Transitions:
+            - TransitionInDays: 180
+              StorageClass: STANDARD_IA
+          NoncurrentVersionTransitions:
+            - TransitionInDays: 180
+              StorageClass: STANDARD_IA
+      VersioningConfiguration:
+        Status: Enabled
+
+  S3BucketLogs:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Join ['-', ['serverless-handson-log', !Ref ProjectName]]
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      LifecycleConfiguration:
+        Rules:
+        - Id: LifeCycleRule
+          Status: Enabled
+          Transitions:
+            - TransitionInDays: 180
+              StorageClass: STANDARD_IA
+          NoncurrentVersionTransitions:
+            - TransitionInDays: 180
+              StorageClass: STANDARD_IA
+
+Outputs:
+  S3BucketFrontend:
+    Value: !Ref S3BucketFrontend
+    Export:
+      Name: !Join ['-', ['S3BucketFrontend', !Ref ProjectName]]
+  S3BucketFrontendArn:
+    Value: !GetAtt S3BucketFrontend.Arn
+    Export:
+      Name: !Join ['-', ['S3BucketFrontendArn', !Ref ProjectName]]
+  S3BucketFrontendDomainName:
+    Value: !GetAtt S3BucketFrontend.DomainName
+    Export:
+      Name: !Join ['-', ['S3BucketFrontendDomainName', !Ref ProjectName]]
+  S3BucketLogsDomainName:
+    Value: !GetAtt S3BucketLogs.DomainName
+    Export:
+      Name: !Join ['-', ['S3BucketLogsDomainName', !Ref ProjectName]]
