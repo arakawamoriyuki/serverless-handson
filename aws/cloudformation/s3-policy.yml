@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: s3 bucket policy resources
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: test
+
+Resources:
+  S3BucketPolicyFrontend:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: {'Fn::ImportValue': !Join ['-', ['S3BucketFrontend', !Ref ProjectName]]}
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource: !Join ['/', [{'Fn::ImportValue': !Join ['-', ['S3BucketFrontendArn', !Ref ProjectName]]}, '*']]
+            Principal:
+              # CloudFrontからのアクセスのみに制限する
+              # https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html#private-content-updating-s3-bucket-policies-principal
+              AWS: !Join [' ', ['arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity', {'Fn::ImportValue': !Join ['-', ['CloudFrontOriginAccessIdentity', !Ref ProjectName]]}]]
