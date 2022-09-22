@@ -1,7 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: cloudfront resources
-
 Parameters:
+  SSLCertificateId:
+    Type: String
+    Description: SSLCertificateId
+  Domain:
+    Type: String
   ProjectName:
     Type: String
     Default: test
@@ -35,7 +39,7 @@ Resources:
               - HEAD
           AccessControlAllowOrigins:
             Items:
-              - '*' # TODO: サービスのドメインを設定
+              - !Ref Domain
           AccessControlExposeHeaders:
             Items:
               - '*'
@@ -84,8 +88,14 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
+        Aliases:
+          - !Ref Domain
         Comment: !Sub ${AWS::StackName} distribution
         DefaultRootObject: index.html
+        ViewerCertificate:
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
+          AcmCertificateArn: !Ref SSLCertificateId
         Origins:
           - Id: S3BucketFrontendOrigin
             DomainName: {'Fn::ImportValue': !Join ['-', ['S3BucketFrontendDomainName', !Ref ProjectName]]}
