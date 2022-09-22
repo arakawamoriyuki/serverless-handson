@@ -1,0 +1,6 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "ignore": [],
+  "exec": "node --experimental-loader=ts-node/esm --es-module-specifier-resolution=node src/app.local.ts"
+}

@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Express
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: test
+  VpcId:
+    Type: String
+  SubnetIds:
+    Type: CommaDelimitedList
+
+Globals:
+  Function:
+    Timeout: 30
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Serverless Function Allowed Ports
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          Description: api
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+
+  ApiGateway:
+    Type: AWS::Serverless::HttpApi
+
+  ServerlessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Join ['-', ['serverless-handson-backend', !Ref ProjectName]]
+      Description: Serverless Express API Server
+      CodeUri: .
+      Handler: lambda.handler
+      Runtime: nodejs14.x
+      Timeout: 30
+      MemorySize: 128
+      Architectures:
+        - x86_64
+      Events:
+        ProxyApiRoot:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ApiGateway
+      VpcConfig:
+        SubnetIds: !Ref SubnetIds
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+      Environment:
+        Variables:
+          NODE_ENV: production
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+        - src/lambda.ts
+
+Outputs:
+  ApiGatewayApiEndpoint:
+    Value: !GetAtt ApiGateway.ApiEndpoint
+  ApiGatewayDomainName:
+    Value: !Select [1, !Split ['://', !GetAtt ApiGateway.ApiEndpoint]]
+    Export:
+      Name: !Join ['-', ['ApiGatewayDomainName', !Ref ProjectName]]
